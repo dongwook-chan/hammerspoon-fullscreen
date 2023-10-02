@@ -3,6 +3,8 @@ local checkForWindow = nil  -- Declare it at the top
 -- Function to set a window to full-screen mode
 local function setWindowToFullScreen(win)
     if win then
+        local mainScreen = hs.screen.primaryScreen()
+        win:moveToScreen(mainScreen)  -- Move the window to the main screen
         win:setFullScreen(true)
     end
 end
