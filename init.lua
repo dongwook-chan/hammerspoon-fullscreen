@@ -41,6 +41,7 @@ end
 
 -- Set up a window filter to watch for new windows being created
 local windowFilter = hs.window.filter.new()
+windowFilter:setAppFilter('Hammerspoon', nil)  -- This excludes Hammerspoon from being monitored
 windowFilter:subscribe(hs.window.filter.windowCreated, function(win)
     setWindowToFullScreen(win)
 end)
