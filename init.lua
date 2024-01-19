@@ -1,36 +1,68 @@
-local checkForWindow = nil  -- Declare it at the top
+local checkForWindow = nil
 
--- Function to maximize a window
-local function maximizeWindow(win)
+-- Function to check if a window is a standard application window
+local function isStandardAppWindow(win)
+    -- Add conditions to exclude certain types of windows, like pop-ups or dialogues
+    -- This is a heuristic approach and may need adjustments
+    print(win:role())
+    print(win:subrole())
+    return win and not win:isMinimized() and win:role() == "AXWindow" and win:subrole() == "AXStandardWindow"
+end
+
+-- Function to check if a window is on the main screen and maximized
+local function isWindowMaximizedOnMainScreen(win)
+    local mainScreen = hs.screen.mainScreen()
+    if win and mainScreen then
+        local winFrame = win:frame()
+        local screenFrame = mainScreen:frame()
+        return win:screen() == mainScreen and winFrame:equals(screenFrame)
+    end
+    return false
+end
+
+-- Function to maximize a window on the main screen
+local function maximizeWindow(win, retryAttempts)
+    print("maximizeWindow")
     if win then
-        win:moveToScreen(mainScreen)
-        win:maximize()
+        local mainScreen = hs.screen.mainScreen()
+        if mainScreen then
+            win:moveToScreen(mainScreen)
+            win:maximize()
+            hs.timer.doAfter(0.1, function()
+                if not isWindowMaximizedOnMainScreen(win) and retryAttempts > 0 then
+                    print("window not maximized or on main screen")
+                    maximizeWindow(win, retryAttempts - 1)
+                end
+            end)
+        end
     end
 end
 
 -- Set up the application watcher for apps being launched
 local function applicationWatcher(appName, eventType, appObject)
     if eventType == hs.application.watcher.launched then
+        print("target spotted")
         local attempts = 0
 
-        -- If there's an existing timer, stop it
         if checkForWindow then
             checkForWindow:stop()
         end
 
-        -- Assign the timer to checkForWindow
         checkForWindow = hs.timer.doEvery(0.1, function()
             local app = hs.appfinder.appFromName(appName)
             if app then
                 local win = app:mainWindow()
                 if win then
-                    maximizeWindow(win)
-                    checkForWindow:stop()
+                    maximizeWindow(win, 10)
+                    if isWindowMaximizedOnMainScreen(win) then
+                        checkForWindow:stop()
+                        print("success")
+                    end
                 else
                     attempts = attempts + 1
                     if attempts >= 300 then
-                        -- Stop checking after 300 failed attempts (30 seconds in total)
                         checkForWindow:stop()
+                        print("failed to maximize " .. appName .. " after 300 attempts")
                     end
                 end
             end
@@ -40,9 +72,14 @@ end
 
 -- Set up a window filter to watch for new windows being created
 local windowFilter = hs.window.filter.new()
-windowFilter:setAppFilter('Hammerspoon', nil)  -- This excludes Hammerspoon from being monitored
+windowFilter:setAppFilter('Hammerspoon', nil)
 windowFilter:subscribe(hs.window.filter.windowCreated, function(win)
-    maximizeWindow(win)
+    if isStandardAppWindow(win) then
+        print("New standard window created, maximizing...")
+        maximizeWindow(win)
+    else
+        print("Non-standard window detected, ignoring...")
+    end
 end)
 
 -- Start the application watcher
