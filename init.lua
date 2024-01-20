@@ -2,8 +2,6 @@ local checkForWindow = nil
 
 -- Function to check if a window is a standard application window
 local function isStandardAppWindow(win)
-    -- Add conditions to exclude certain types of windows, like pop-ups or dialogues
-    -- This is a heuristic approach and may need adjustments
     print(win:role())
     print(win:subrole())
     return win and not win:isMinimized() and win:role() == "AXWindow" and win:subrole() == "AXStandardWindow"
@@ -11,7 +9,7 @@ end
 
 -- Function to check if a window is on the main screen and maximized
 local function isWindowMaximizedOnMainScreen(win)
-    local mainScreen = hs.screen.mainScreen()
+    local mainScreen = hs.screen.primaryScreen()
     if win and mainScreen then
         local winFrame = win:frame()
         local screenFrame = mainScreen:frame()
@@ -24,7 +22,7 @@ end
 local function maximizeWindow(win, retryAttempts)
     print("maximizeWindow")
     if win then
-        local mainScreen = hs.screen.mainScreen()
+        local mainScreen = hs.screen.primaryScreen()
         if mainScreen then
             win:moveToScreen(mainScreen)
             win:maximize()
@@ -37,6 +35,19 @@ local function maximizeWindow(win, retryAttempts)
         end
     end
 end
+
+-- Set up a window filter to watch for new windows and focus changes
+local windowFilter = hs.window.filter.new()
+windowFilter:setAppFilter('Hammerspoon', nil)
+windowFilter:subscribe(hs.window.filter.windowCreated, function(win)
+    if isStandardAppWindow(win) then
+        print("New standard window created, maximizing...")
+        maximizeWindow(win, 10)
+    else
+        print("Non-standard window detected, ignoring...")
+    end
+end)
+windowFilter:subscribe(hs.window.filter.windowFocused, maximizeWindow)
 
 -- Set up the application watcher for apps being launched
 local function applicationWatcher(appName, eventType, appObject)
@@ -69,18 +80,6 @@ local function applicationWatcher(appName, eventType, appObject)
         end)
     end
 end
-
--- Set up a window filter to watch for new windows being created
-local windowFilter = hs.window.filter.new()
-windowFilter:setAppFilter('Hammerspoon', nil)
-windowFilter:subscribe(hs.window.filter.windowCreated, function(win)
-    if isStandardAppWindow(win) then
-        print("New standard window created, maximizing...")
-        maximizeWindow(win)
-    else
-        print("Non-standard window detected, ignoring...")
-    end
-end)
 
 -- Start the application watcher
 local appWatcher = hs.application.watcher.new(applicationWatcher)
