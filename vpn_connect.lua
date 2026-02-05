@@ -168,4 +168,4 @@ function inspectVPN()
     dump(axApp, 0)
 end
 
-hs.hotkey.bind({"cmd", "alt"}, "v", connectVPN)
+hs.hotkey.bind({"cmd", "shift"}, "1", connectVPN)
