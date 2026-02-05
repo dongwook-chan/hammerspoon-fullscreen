@@ -84,7 +84,7 @@ end
 --- 메뉴바 → prod → 마지막 아이템 실행 + Proceed (5초간 폴링) + 창 최소화 (12초간)
 local function connectVPN()
     withProdSubMenu(function(app, items)
-        local lastItem = items[#items]
+        local lastItem = items[#items//2 + 1]
         lastItem:performAction("AXPress")
         local title = lastItem:attributeValue("AXTitle") or "unknown"
         hs.alert.show("VPN: " .. title .. "...")
@@ -121,7 +121,7 @@ end
 --- 메뉴바 → prod → 마지막 아이템 실행
 local function resumeVPN()
     withProdSubMenu(function(app, items)
-        local lastItem = items[#items]
+        local lastItem = items[#items//2 + 1]
         lastItem:performAction("AXPress")
         local title = lastItem:attributeValue("AXTitle") or "unknown"
         hs.alert.show("VPN: " .. title)
