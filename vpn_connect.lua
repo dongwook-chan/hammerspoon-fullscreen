@@ -81,7 +81,7 @@ local function withProdSubMenu(callback)
     end)
 end
 
---- 메뉴바 → prod → 마지막 아이템 실행 + Proceed (5초간 폴링)
+--- 메뉴바 → prod → 마지막 아이템 실행 + Proceed (5초간 폴링) + 창 최소화 (12초간)
 local function connectVPN()
     withProdSubMenu(function(app, items)
         local lastItem = items[#items]
@@ -94,7 +94,24 @@ local function connectVPN()
         proceedTimer = hs.timer.doEvery(0.1, function()
             attempts = attempts + 1
             local axApp = ax.applicationElement(app)
-            if clickProceed(axApp) or attempts > 50 then
+            if clickProceed(axApp) then
+                proceedTimer:stop()
+                hs.timer.doAfter(1, function()
+                    local minAttempts = 0
+                    local minimizeTimer
+                    minimizeTimer = hs.timer.doEvery(0.1, function()
+                        minAttempts = minAttempts + 1
+                        local vpnApp = hs.application.find(APP_NAME)
+                        if vpnApp then
+                            local win = vpnApp:mainWindow()
+                            if win then win:minimize() end
+                        end
+                        if minAttempts >= 120 then
+                            minimizeTimer:stop()
+                        end
+                    end)
+                end)
+            elseif attempts > 50 then
                 proceedTimer:stop()
             end
         end)
