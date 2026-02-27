@@ -5,7 +5,7 @@ local wf = hs.window.filter.new{'Notes'}
 wf:subscribe(hs.window.filter.windowFocused, function(win, appName)
   -- give it a 10 s buffer
   hs.timer.doAfter(10, function()
-    local ok, err = hs.osascript.applescript([[
+    local ok, _, err = hs.osascript.applescript([[
       -- 0) Prepare temporary directory for attachments
       set tmpDir to POSIX path of (path to temporary items) & "NotesMoveTmp/"
       do shell script "rm -rf " & quoted form of tmpDir & " && mkdir -p " & quoted form of tmpDir
@@ -70,6 +70,6 @@ wf:subscribe(hs.window.filter.windowFocused, function(win, appName)
       -- 6) Done!
       display notification "MoveNotes completed: " & (matchCount as text) & " note(s) moved." with title "MoveNotes Debug"
     ]])
-    if not ok then hs.alert.show("MoveNotes error: "..err) end
+    if not ok then hs.alert.show("MoveNotes error: "..(err and tostring(err) or "unknown error")) end
   end)
 end)

@@ -18,8 +18,12 @@ end
 local function maximizeWindow(win, retries)
     if not win then return end
     local main = hs.screen.primaryScreen()
-    win:moveToScreen(main)
-    win:maximize()
+    if not main then return end
+    local ok, err = pcall(function()
+        win:moveToScreen(main)
+        win:maximize()
+    end)
+    if not ok then return end
     if retries > 0 then
         hs.timer.doAfter(0.1, function()
             if not isWindowMaximizedOnMainScreen(win) then
