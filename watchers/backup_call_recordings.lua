@@ -49,9 +49,11 @@ wf:subscribe(hs.window.filter.windowFocused, function(win, appName)
           end tell
 
           set stepName to "find attachment: " & attachName
-          set attachPath to do shell script "find " & quoted form of attachDir1 & " -name " & quoted form of attachName & " -type f 2>/dev/null | head -1 || true"
+          -- Normalize to NFD for APFS matching and add wildcard for file extension
+          set nfdName to do shell script "python3 -c \"import unicodedata,sys; print(unicodedata.normalize('NFD', sys.argv[1]))\" " & quoted form of attachName
+          set attachPath to do shell script "find " & quoted form of attachDir1 & " -name " & quoted form of (nfdName & "*") & " -type f 2>/dev/null | head -1 || true"
           if attachPath = "" then
-            set attachPath to do shell script "find " & quoted form of attachDir2 & " -name " & quoted form of attachName & " -type f 2>/dev/null | head -1 || true"
+            set attachPath to do shell script "find " & quoted form of attachDir2 & " -name " & quoted form of (nfdName & "*") & " -type f 2>/dev/null | head -1 || true"
           end if
           if attachPath = "" then
             return "FAIL at [" & stepName & "]: file not found on disk"
